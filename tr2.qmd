@@ -22,7 +22,7 @@ curling <- read_csv("curling.csv") ## make sure to set working directory to sour
 # Make data object
 run_data <- list(N = nrow(curling),
                  x = as.integer(curling$PowerPlay),
-                 y = as.integer(curling$USWin),
+                 y = curling$USWin,
                  z = curling$Points, 
                  m0 = 0,
                  m1 = 0,
