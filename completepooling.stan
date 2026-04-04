@@ -1,10 +1,9 @@
 // Technical Report 2 complete pooling strategy: Curling
-
 data {
-  int<lower=0> N; // number of rows (ends)
-  vector[N] y; // USWin data
-  real<lower=0, upper=1>[N] x; // PowerPlay
-  real<lower=0, upper=4>[N] z; // points
+  int<lower=1> N; // number of rows (ends)
+  real<lower=0, upper=1> y[N]; // USWin data (indicator variable)
+  real<lower=0, upper=1> x[N]; // PowerPlay indicator 
+  real<lower=0, upper=4> z[N]; // points
   
   // hyper parameters
   real m0;
@@ -24,16 +23,16 @@ parameters {
 }
 
 transformed parameters {
-  vector[N] p;
-  p = beta0 + beta1 * x + beta2 * z;
+  real<lower=0, upper=1> p[N];
+  p = beta0 + beta1*x + beta2*z; // error here?
 }
 
 
 model {
-  target += normal_lpdf(y | p;
+  target += bernoulli_lpmf(y | p);
   target += normal_lpdf(beta0 | m0, s0);
   target += normal_lpdf(beta1 | m1, s1);
-  target += gamma_lpdf(beta2 | m2, s2);
+  target += normal_lpdf(beta2 | m2, s2);
 }
 
 
