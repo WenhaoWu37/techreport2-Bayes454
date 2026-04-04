@@ -25,8 +25,12 @@ parameters {
 }
 
 transformed parameters {
+  // logistic regression in order to confine p to be between 0 and 1
+  vector<lower=0>[N] odds;
   vector<lower=0, upper=1>[N] p;
-  p = exp(beta0 + beta1*x + beta2*z);
+  
+  odds = exp(beta0 + beta1*x + beta2*z);
+  p = odds ./ (odds + 1); // for division syntax of 2 vectors, https://mc-stan.org/docs/functions-reference/compound_arithmetic_and_assignment.html#compound-elementwise-division-and-assignment 
 }
 
 model {
