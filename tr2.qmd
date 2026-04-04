@@ -1,12 +1,14 @@
 ---
 title: "techreport2"
-format: html
-editor: visual
+format: 
+  html:
+      embed-resources: true
+editor: source
 ---
 
 ## data
 
-```{r}
+```{r message = FALSE}
 set.seed(454)
 # load libraries
 library(tidyverse) #ofc
@@ -16,7 +18,7 @@ library(bayesplot)
 curling <- read_csv("curling.csv") ## make sure to set working directory to source file location
 ```
 
-```{r}
+```{r output=FALSE}
 ## Complete Pooling approach
 
 # Make data object
