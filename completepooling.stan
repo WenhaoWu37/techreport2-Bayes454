@@ -4,7 +4,7 @@ data {
   int<lower=0> N; // number of rows (ends)
   vector[N] y; // USWin data
   real<lower=0, upper=1>[N] x; // PowerPlay
-  real<lower-0, upper=4>[N] z; // points
+  real<lower=0, upper=4>[N] z; // points
   
   // hyper parameters
   real m0;
