@@ -18,6 +18,7 @@ library(bayesplot)
 curling <- read_csv("curling.csv") ## make sure to set working directory to source file location
 ```
 
+
 ```{r output=FALSE}
 ## Complete Pooling approach
 
@@ -39,6 +40,44 @@ fit <- stan(file = "completepooling.stan", ## make sure to set working directory
             chains = 4, 
             warmup = 1000,
             iter = 2000)
-
-
 ```
+
+```{r output=FALSE}
+## Complete Pooling approach
+
+# making unique indices for each match 
+curling <- curling %>%
+  mutate(k=as.integer(as.factor(CompetitionName)), # competition indices
+         uniqueMatchID = str_c(MatchID, k),
+         j = as.integer(as.factor(uniqueMatchID)) # match indices (all matches across competitions have a unique)
+         )
+  
+
+# Make data object
+run_data_partial <- list(N = nrow(curling),
+                 x = as.integer(curling$PowerPlay),
+                 y = curling$USWin,
+                 z = curling$Points,
+                 n_competitions = length(unique(curling$CompetitionName)),
+                 n_matches = length(unique(curling$uniqueMatchID)),
+                 k = curling$k, # competition indices
+                 j = curling$j, # match indices
+                 w0 = 0, w1 = 0, w2 = 0,
+                 sigma0 = 1, sigma1 = 1, sigma2 = 1, 
+                 # I'm not sure how to pick reasonable values for the Gamma models 
+                 c0 = 1, c1 = 1, c2=1,
+                 d0=1, d1=1, d2=1,
+                 f0 = 1, f1=1, f2=1, 
+                 g0=1, g1=1, g2=1, 
+                 q0=1, q1=1, q2=1, 
+                 r0=1, r1=1, r2=1)
+
+# Fit model in Stan
+fit_partial <- stan(file = "partialpooling.stan", ## make sure to set working directory to source file location
+            data = run_data_partial, 
+            chains = 4, 
+            warmup = 1000,
+            iter = 2000)
+```
+
+
