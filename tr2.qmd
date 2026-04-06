@@ -32,11 +32,16 @@ run_data <- list(N = nrow(curling),
                  s2 = 2)
 
 # Fit model in Stan
-fit <- stan(file = "completepooling.stan", ## make sure to set working directory to source file location
+fit <- stan(file = "C:\\Users\\wwh15\\Desktop\\STAT454 Bayes\\TR2\\techreport2-Bayes454\\completepooling.stan", ## make sure to set working directory to source file location
             data = run_data, 
             chains = 4, 
             warmup = 1000,
             iter = 2000)
 
 
+```
+
+```{r}
+print(fit, pars = c("beta0", "beta1", "beta2"))
+plot(fit, pars = c("beta0", "beta1", "beta2"))
 ```
