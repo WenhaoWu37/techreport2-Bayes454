@@ -139,7 +139,7 @@ beta1ESS <- rep(NA, 4)
 beta2ESS <- rep(NA, 4)
 
 # for each of the 4 competitions, calculate the Rhat and bulk ESS of beta0, beta1, and beta2
-for(i in 1:13){
+for(i in 1:4){
   beta0rhats[i] <- Rhat(extract(fit_partial, pars = "beta0", permuted = FALSE)[,,i])
   beta1rhats[i] <- Rhat(extract(fit_partial, pars = "beta1", permuted = FALSE)[,,i])
   beta2rhats[i] <- Rhat(extract(fit_partial, pars = "beta2", permuted = FALSE)[,,i])
