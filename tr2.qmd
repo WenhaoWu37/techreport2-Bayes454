@@ -6,7 +6,7 @@ format:
 editor: source
 ---
 
-## data
+## Data
 
 ```{r message = FALSE}
 set.seed(454)
@@ -18,13 +18,39 @@ library(bayesplot)
 curling <- read_csv("curling.csv") ## make sure to set working directory to source file location
 ```
 
+```{r}
+curling %>%
+  mutate(result = ifelse(USWin, "win", "loss")) %>%
+  group_by(PowerPlay, result) %>%
+  summarize(n=n()) %>%
+  ggplot(aes(x=PowerPlay, y=n, fill=result))+
+  geom_col()+
+  theme_classic()+
+  labs(x="Used power play?", y="number of ends", fill="Result")
+
+
+curling %>%
+ mutate(result = ifelse(USWin, "win", "loss")) %>%
+  group_by(Points, result) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x=Points, y=n, fill=result))+
+  geom_col(position="dodge")+
+  theme_classic()+
+  labs(fill="Result", y="number of ends")
+```
+
+
+
+## Models
+
 
 ```{r output=FALSE}
+set.seed(454)
 ## Complete Pooling approach
 
 # Make data object
 run_data <- list(N = nrow(curling),
-                 x = as.integer(curling$PowerPlay),
+                 x = curling$PowerPlay,
                  y = curling$USWin,
                  z = curling$Points, 
                  m0 = 0,
@@ -43,7 +69,8 @@ fit <- stan(file = "completepooling.stan", ## make sure to set working directory
 ```
 
 ```{r output=FALSE}
-## Complete Pooling approach
+set.seed(454)
+## Partial Pooling approach (STILL BUGGY)
 
 # making unique indices for each match 
 curling <- curling %>%
@@ -79,5 +106,50 @@ fit_partial <- stan(file = "partialpooling.stan", ## make sure to set working di
             warmup = 1000,
             iter = 2000)
 ```
+## Results
 
+### Convergence Diagnostics 
 
+#### Complete pooling
+
+```{r}
+# Rhat
+Rhat(extract(fit, pars = "beta0", permuted = FALSE)[,,1]) 
+Rhat(extract(fit, pars = "beta1", permuted = FALSE)[,,1])
+
+# bulk-ESS
+ess_bulk(extract(fit, pars = "beta0", permuted = FALSE)[,,1])
+ess_bulk(extract(fit, pars = "beta1", permuted = FALSE)[,,1])
+```
+
+```{r}
+traceplot(fit, pars = "beta0", inc_warmup = TRUE)
+traceplot(fit, pars = "beta1", inc_warmup = TRUE)
+traceplot(fit, pars = "beta2", inc_warmup = TRUE)
+```
+
+```{r}
+# autocorrelation plot
+stan_ac(fit, pars = c("beta0","beta1", "beta2"), size=0.5)
+```
+
+#### Partial Pooling
+
+### Regression Coefficients 
+
+#### Complete Pooling
+
+```{r}
+posterior_data_complete <- as.data.frame(fit)
+
+# estimates and credible intervals of exponentiated coefficients 
+# (so represent multiplicative change in odds of winning)
+mean(exp(posterior_data_complete$beta0))
+quantile(exp(posterior_data_complete$beta0), c(0.05, 0.95))
+mean(exp(posterior_data_complete$beta1)) # coefficient for X, power play 
+quantile(exp(posterior_data_complete$beta1), c(0.05, 0.95))
+mean(exp(posterior_data_complete$beta2)) # coefficient for Z, effectiveness
+quantile(exp(posterior_data_complete$beta2), c(0.05, 0.95))
+```
+
+#### Partial Pooling

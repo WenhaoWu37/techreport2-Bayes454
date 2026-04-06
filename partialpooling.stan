@@ -79,7 +79,7 @@ transformed parameters {
   
   // p for each row based on match 
   for(l in 1:N){
-    odds[l] = exp(beta0[j[N]] + beta1[j[N]]*x[l] + beta2[j[N]]*z[l]);
+    odds[l] = exp(beta0[j[l]] + beta1[j[l]]*x[l] + beta2[j[l]]*z[l]);
     p[l] = odds[l] ./ (odds[l] + 1);
   }
   
