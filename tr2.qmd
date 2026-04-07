@@ -15,6 +15,80 @@ library(readr)
 library(bayesplot)
 curling <- read_csv("curling.csv") ## make sure to set working directory to source file location
 ```
+```{r message=FALSE}
+## to get prior information
+
+canada_ends <- read_csv("Ends.csv") %>%
+   filter(TeamID == 10)
+canada_games <- read_csv("Games.csv") %>%
+  filter(TeamID1 == 10 | TeamID2 == 10)
+
+canada_data <- canada_ends %>%
+  left_join(canada_games) %>%
+  select(Result, PowerPlay, Winner, TeamID1, TeamID2, CompetitionID) %>%
+  mutate(PowerPlay = replace_na(PowerPlay, 0), 
+         PowerPlay = ifelse(PowerPlay==0, 0, 1)) %>%
+  mutate(CanadaWin = (Winner==0&TeamID1==10)|(Winner==1&TeamID2==10)) %>%
+  mutate(j = case_when(CompetitionID == 0 ~ 1, 
+                       CompetitionID == 22230015 ~ 2,
+                       CompetitionID == 23240026 ~ 3,
+                       CompetitionID == 24250026 ~ 4))
+```
+
+```{r}
+## priors for complete pooling
+canada_logitreg <- glm(CanadaWin ~ PowerPlay + Result, data = canada_data, family = "binomial")
+complete_priors <- coef(summary(canada_logitreg))
+complete_priors
+```
+
+```{r}
+## get priors for partial pooling 
+canada_partial <- data.frame(beta0 = rep(NA, 4), beta1=rep(NA, 4), beta2=rep(NA, 4), se0 = rep(NA, 4), se1=rep(NA, 4), se2=rep(NA, 4))
+
+### step 1: logistic regression for each competition
+for(i in 1:4){
+  canada_data_competition <- canada_data %>%
+    filter(j == i)
+  
+  model <- glm(CanadaWin ~ PowerPlay + Result, data = canada_data_competition, family = "binomial")
+  
+  # fill in coefficient estimates
+  canada_partial$beta0[i] <- model$coefficients["(Intercept)"]
+  canada_partial$beta1[i] <- model$coefficients["PowerPlay"]
+  canada_partial$beta2[i] <- model$coefficients["Result"]
+  
+  # fill in SEs
+  canada_partial$se0[i] <- summary(model)$coef["(Intercept)", "Std. Error"]
+  canada_partial$se1[i] <- summary(model)$coef["PowerPlay", "Std. Error"]
+  canada_partial$se2[i] <- summary(model)$coef["Result", "Std. Error"]
+}
+
+## step 2: find means and SDs of the coefficient estimates
+### beta0
+u0 <- mean(canada_partial$beta0)
+v0 <- sd(canada_partial$beta0)
+### beta1
+u1 <- mean(canada_partial$beta1)
+v1 <- sd(canada_partial$beta1)
+### beta2
+u2 <- mean(canada_partial$beta2)
+v2 <- sd(canada_partial$beta2)
+
+## step 3: alpha and beta for the variances
+eta0 = mean(1/canada_partial$se0^2) / var(1/canada_partial$se0^2)
+alpha0 = eta0 * mean(1/canada_partial$se0^2)
+
+eta1 = mean(1/canada_partial$se1^2) / var(1/canada_partial$se1^2)
+alpha1 = eta1 * mean(canada_partial$se1)
+
+eta2 = mean(1/canada_partial$se2^2) / var(1/canada_partial$se2^2)
+alpha2 = eta2 * mean(1/canada_partial$se2^2)
+
+```
+
+
+## models
 
 ```{r}
 ## Complete Pooling approach
@@ -24,15 +98,15 @@ run_data <- list(N = nrow(curling),
                  x = as.integer(curling$PowerPlay),
                  y = curling$USWin,
                  z = curling$Points, 
-                 m0 = 0,
-                 m1 = 0,
-                 m2 = 0,
-                 s0 = 2,
-                 s1 = 2,
-                 s2 = 2)
+                 m0 = -0.4593229,
+                 m1 = 0.8555314,
+                 m2 = -0.2783732,
+                 s0 = 0.1525552^2,
+                 s1 = 0.4249329^2,
+                 s2 = 0.1049008^2)
 
 # Fit model in Stan
-fit <- stan(file = "C:\\Users\\wwh15\\Desktop\\STAT454 Bayes\\TR2\\techreport2-Bayes454\\completepooling.stan", ## make sure to set working directory to source file location
+fit <- stan(file = "completepooling.stan", ## make sure to set working directory to source file location
             data = run_data, 
             chains = 4, 
             warmup = 1000,
@@ -58,22 +132,22 @@ run_data <- list(
   x = as.numeric(curling$PowerPlay),  
   z = as.numeric(curling$Points),       
   y = as.integer(curling$USWin),         
-  u0 = 0,
-  u1 = 0,
-  u2 = 0,
-  v0 = 2,
-  v1 = 2,
-  v2 = 2,
-  alpha0 = 2,
-  alpha1 = 2,
-  alpha2 = 2,
-  eta0 = 2,
-  eta1 = 2,
-  eta2 = 2
+  u0 = u0,
+  u1 = u1,
+  u2 = u2,
+  v0 = v0,
+  v1 = v1,
+  v2 = v2,
+  alpha0 = alpha0,
+  alpha1 = alpha1,
+  alpha2 = alpha2,
+  eta0 = eta0,
+  eta1 = eta1,
+  eta2 = eta2
 )
 
 # Fit model in Stan
-partial_fit <- stan(file = "C:\\Users\\wwh15\\Desktop\\STAT454 Bayes\\TR2\\techreport2-Bayes454\\partialpooling2.stan", ## make sure to set working directory to source file location
+partial_fit <- stan(file = "partialpooling2.stan", ## make sure to set working directory to source file location
             data = run_data, 
             chains = 4, 
             warmup = 1000,
