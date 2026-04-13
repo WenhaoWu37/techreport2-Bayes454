@@ -1,12 +1,15 @@
 ---
 title: "techreport2"
-format: html
-editor: visual
+format: 
+  html:
+      embed-resources: true
+editor_options: 
+  chunk_output_type: console
 ---
 
-## data
+## Data + Priors
 
-```{r}
+```{r message=FALSE}
 set.seed(454)
 # load libraries
 library(tidyverse) #ofc
@@ -15,6 +18,7 @@ library(readr)
 library(bayesplot)
 curling <- read_csv("curling.csv") ## make sure to set working directory to source file location
 ```
+
 ```{r message=FALSE}
 ## to get prior information
 
@@ -87,10 +91,13 @@ alpha2 = eta2 * mean(1/canada_partial$se2^2)
 
 ```
 
+## Models
 
-## models
+### Complete Pooling
 
 ```{r}
+set.seed(454)
+
 ## Complete Pooling approach
 
 # Make data object
@@ -119,8 +126,22 @@ fit <- stan(file = "completepooling.stan", ## make sure to set working directory
 print(fit, pars = c("beta0", "beta1", "beta2"))
 plot(fit, pars = c("beta0", "beta1", "beta2"))
 traceplot(fit, pars = c("beta0", "beta1", "beta2"), inc_warmup = TRUE)
+
+# 95% credible intervals
+posterior_complete <- as.data.frame(fit)
+quantile(posterior_complete$beta0, c(0.05, 0.95))
+quantile(posterior_complete$beta1, c(0.05, 0.95))
+quantile(posterior_complete$beta2, c(0.05, 0.95))
+# exponentiated
+quantile(exp(posterior_complete$beta0), c(0.05, 0.95))
+quantile(exp(posterior_complete$beta1), c(0.05, 0.95))
+quantile(exp(posterior_complete$beta2), c(0.05, 0.95))
 ```
+
+### Partial Pooling
+
 ```{r}
+set.seed(454)
 ## Partial Pooling approach
 curling$competition <- as.integer(as.factor(curling$CompetitionName))
 
