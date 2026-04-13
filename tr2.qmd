@@ -127,6 +127,55 @@ print(fit, pars = c("beta0", "beta1", "beta2"))
 plot(fit, pars = c("beta0", "beta1", "beta2"))
 traceplot(fit, pars = c("beta0", "beta1", "beta2"), inc_warmup = TRUE)
 
+ess_bulk(extract(partial_fit, pars = "beta0", permuted = FALSE)[,,1])
+ess_bulk(extract(partial_fit, pars = "beta1", permuted = FALSE)[,,1])
+ess_bulk(extract(partial_fit, pars = "beta2", permuted = FALSE)[,,1])
+
+# 95% credible intervals
+posterior_complete <- as.data.frame(fit)
+quantile(posterior_complete$beta0, c(0.05, 0.95))
+quantile(posterior_complete$beta1, c(0.05, 0.95))
+quantile(posterior_complete$beta2, c(0.05, 0.95))
+# exponentiated
+quantile(exp(posterior_complete$beta0), c(0.05, 0.95))
+quantile(exp(posterior_complete$beta1), c(0.05, 0.95))
+quantile(exp(posterior_complete$beta2), c(0.05, 0.95))
+```
+
+#### trying with old priors
+
+```{r}
+set.seed(454)
+
+## Complete Pooling approach
+
+# Make data object
+run_data <- list(N = nrow(curling),
+                 x = as.integer(curling$PowerPlay),
+                 y = curling$USWin,
+                 z = curling$Points, 
+                 m0 = 0,
+                 m1 = 0,
+                 m2 = 0,
+                 s0 = 2,
+                 s1 = 2,
+                 s2 = 2)
+
+# Fit model in Stan
+fit <- stan(file = "completepooling.stan", ## make sure to set working directory to source file location
+            data = run_data, 
+            chains = 4, 
+            warmup = 1000,
+            iter = 2000)
+
+
+```
+
+```{r}
+print(fit, pars = c("beta0", "beta1", "beta2"))
+plot(fit, pars = c("beta0", "beta1", "beta2"))
+traceplot(fit, pars = c("beta0", "beta1", "beta2"), inc_warmup = TRUE)
+
 # 95% credible intervals
 posterior_complete <- as.data.frame(fit)
 quantile(posterior_complete$beta0, c(0.05, 0.95))
@@ -179,4 +228,16 @@ partial_fit <- stan(file = "partialpooling2.stan", ## make sure to set working d
 print(partial_fit, pars = c("beta0", "beta1", "beta2"))
 plot(partial_fit, pars = c("beta0", "beta1", "beta2"))
 traceplot(partial_fit, pars = c("beta0", "beta1", "beta2"), inc_warmup = TRUE)
+ess_bulk(extract(partial_fit, pars = "beta0[1]", permuted = FALSE)[,,1])
+ess_bulk(extract(partial_fit, pars = "beta0[2]", permuted = FALSE)[,,1])
+ess_bulk(extract(partial_fit, pars = "beta0[3]", permuted = FALSE)[,,1])
+ess_bulk(extract(partial_fit, pars = "beta0[4]", permuted = FALSE)[,,1])
+ess_bulk(extract(partial_fit, pars = "beta1[1]", permuted = FALSE)[,,1])
+ess_bulk(extract(partial_fit, pars = "beta1[2]", permuted = FALSE)[,,1])
+ess_bulk(extract(partial_fit, pars = "beta1[3]", permuted = FALSE)[,,1])
+ess_bulk(extract(partial_fit, pars = "beta1[4]", permuted = FALSE)[,,1])
+ess_bulk(extract(partial_fit, pars = "beta2[1]", permuted = FALSE)[,,1])
+ess_bulk(extract(partial_fit, pars = "beta2[2]", permuted = FALSE)[,,1])
+ess_bulk(extract(partial_fit, pars = "beta2[3]", permuted = FALSE)[,,1])
+ess_bulk(extract(partial_fit, pars = "beta2[4]", permuted = FALSE)[,,1])
 ```
