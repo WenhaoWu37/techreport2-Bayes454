@@ -37,6 +37,18 @@ canada_data <- canada_ends %>%
                        CompetitionID == 22230015 ~ 2,
                        CompetitionID == 23240026 ~ 3,
                        CompetitionID == 24250026 ~ 4))
+
+canada_data %>%
+  group_by(PowerPlay) %>%
+  summarize(percwin = mean(CanadaWin)) %>%
+  ggplot(aes(x=PowerPlay, y=percwin))+
+  geom_col()
+
+curling %>%
+  group_by(PowerPlay) %>%
+  summarize(percwin = mean(USWin)) %>%
+  ggplot(aes(x=PowerPlay, y=percwin))+
+  geom_col()
 ```
 
 ```{r}
